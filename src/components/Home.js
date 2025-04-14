@@ -4,11 +4,15 @@ import { collection, getDocs, addDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import YachtCard from './YachtCard';
 import { addSampleYachts } from '../sampleData';
+import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const Home = () => {
   const [yachts, setYachts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { currentUser, logout } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchYachts = async () => {
@@ -65,6 +69,15 @@ const Home = () => {
     }
   };
 
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/login');
+    } catch (error) {
+      console.error('Failed to log out:', error);
+    }
+  };
+
   if (loading) {
     return (
       <Container>
@@ -85,28 +98,47 @@ const Home = () => {
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h3" component="h1" gutterBottom>
-          Luxury Yacht Rentals
-        </Typography>
-        <Typography variant="h6" color="text.secondary" gutterBottom>
-          Experience the ultimate luxury on the water
-        </Typography>
-        <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
-          <Button 
-            variant="contained" 
-            color="primary" 
-            onClick={handleAddSampleData}
-          >
-            Add Sample Yachts
-          </Button>
-          <Button 
-            variant="outlined" 
-            color="primary" 
-            onClick={handleTestFirebase}
-          >
-            Test Firebase Connection
-          </Button>
+      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Box>
+          <Typography variant="h3" component="h1" gutterBottom>
+            Luxury Yacht Rentals
+          </Typography>
+          <Typography variant="h6" color="text.secondary" gutterBottom>
+            Experience the ultimate luxury on the water
+          </Typography>
+        </Box>
+        <Box>
+          {currentUser ? (
+            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+              <Typography variant="body1">
+                Welcome, {currentUser.email}
+              </Typography>
+              <Button 
+                variant="outlined" 
+                color="primary" 
+                onClick={handleLogout}
+              >
+                Logout
+              </Button>
+            </Box>
+          ) : (
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <Button 
+                variant="contained" 
+                color="primary" 
+                onClick={() => navigate('/login')}
+              >
+                Login
+              </Button>
+              <Button 
+                variant="outlined" 
+                color="primary" 
+                onClick={() => navigate('/signup')}
+              >
+                Sign Up
+              </Button>
+            </Box>
+          )}
         </Box>
       </Box>
       <Grid container spacing={3}>
