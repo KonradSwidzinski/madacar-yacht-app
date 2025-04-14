@@ -3,15 +3,16 @@ import { Container, Grid, Typography, Box, Button } from '@mui/material';
 import { collection, getDocs, addDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import YachtCard from './YachtCard';
-import { addSampleYachts } from '../sampleData';
+import { addSampleYachts, addSampleBookings } from '../sampleData';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { Card, CardContent, CardMedia } from '@mui/material';
 
 const Home = () => {
   const [yachts, setYachts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const { currentUser, logout } = useAuth();
+  const { currentUser, logout, isAdmin } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -54,6 +55,17 @@ const Home = () => {
     }
   };
 
+  const handleAddSampleBookings = async () => {
+    console.log('Adding sample bookings...');
+    try {
+      await addSampleBookings();
+      alert('Sample bookings added successfully!');
+    } catch (error) {
+      console.error('Error adding sample bookings:', error);
+      setError(error.message);
+    }
+  };
+
   const handleTestFirebase = async () => {
     try {
       console.log('Testing Firebase connection...');
@@ -76,6 +88,10 @@ const Home = () => {
     } catch (error) {
       console.error('Failed to log out:', error);
     }
+  };
+
+  const handleYachtClick = (yachtId) => {
+    navigate(`/yacht/${yachtId}`);
   };
 
   if (loading) {
@@ -141,19 +157,67 @@ const Home = () => {
           )}
         </Box>
       </Box>
-      <Grid container spacing={3}>
+
+      {isAdmin && (
+        <Box sx={{ mb: 4, display: 'flex', gap: 2 }}>
+          <Button 
+            variant="contained" 
+            color="secondary" 
+            onClick={handleAddSampleData}
+          >
+            Add Sample Yachts
+          </Button>
+          <Button 
+            variant="contained" 
+            color="secondary" 
+            onClick={handleAddSampleBookings}
+          >
+            Add Sample Bookings
+          </Button>
+        </Box>
+      )}
+
+      <Typography variant="h4" component="h1" gutterBottom>
+        Available Yachts
+      </Typography>
+      <Grid container spacing={4}>
         {yachts.map((yacht) => (
-          <Grid item xs={12} sm={6} md={4} key={yacht.id}>
-            <YachtCard yacht={yacht} />
+          <Grid item key={yacht.id} xs={12} sm={6} md={4}>
+            <Card 
+              sx={{ 
+                height: '100%', 
+                display: 'flex', 
+                flexDirection: 'column',
+                cursor: 'pointer',
+                '&:hover': {
+                  transform: 'scale(1.02)',
+                  transition: 'transform 0.2s ease-in-out'
+                }
+              }}
+              onClick={() => handleYachtClick(yacht.id)}
+            >
+              <CardMedia
+                component="img"
+                height="200"
+                image={yacht.imageUrl || 'https://via.placeholder.com/300x200?text=Yacht+Image'}
+                alt={yacht.name}
+              />
+              <CardContent sx={{ flexGrow: 1 }}>
+                <Typography gutterBottom variant="h5" component="h2">
+                  {yacht.name}
+                </Typography>
+                <Typography>
+                  {yacht.description?.substring(0, 100)}...
+                </Typography>
+                <Box sx={{ mt: 2 }}>
+                  <Typography variant="h6" color="primary">
+                    ${yacht.pricePerDay} / day
+                  </Typography>
+                </Box>
+              </CardContent>
+            </Card>
           </Grid>
         ))}
-        {yachts.length === 0 && (
-          <Grid item xs={12}>
-            <Typography variant="h6" color="text.secondary" align="center">
-              No yachts found. Click "Add Sample Yachts" to add some sample data.
-            </Typography>
-          </Grid>
-        )}
       </Grid>
     </Container>
   );

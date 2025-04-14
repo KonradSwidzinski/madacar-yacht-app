@@ -1,29 +1,27 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { 
   Container, 
-   
+  Grid, 
   Typography, 
   Box, 
   Paper,
-  TextField,
-  Button,
-  Stack
+  Alert,
+  Snackbar
 } from '@mui/material';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, addDoc, collection } from 'firebase/firestore';
 import { db } from '../firebase';
+import { useAuth } from '../contexts/AuthContext';
+import BookingCalendar from './BookingCalendar';
 
 const YachtDetails = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const { currentUser } = useAuth();
   const [yacht, setYacht] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [bookingDetails, setBookingDetails] = useState({
-    name: '',
-    email: '',
-    phone: ''
-  });
+  const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
     const fetchYacht = async () => {
@@ -34,6 +32,7 @@ const YachtDetails = () => {
         }
       } catch (error) {
         console.error('Error fetching yacht:', error);
+        setError('Failed to load yacht details');
       } finally {
         setLoading(false);
       }
@@ -42,10 +41,33 @@ const YachtDetails = () => {
     fetchYacht();
   }, [id]);
 
-  const handleBookingSubmit = async (e) => {
-    e.preventDefault();
-    // TODO: Implement booking submission to Firebase
-    console.log('Booking submitted:', { startDate, endDate, bookingDetails });
+  const handleBookingSubmit = async (bookingData) => {
+    try {
+      if (!currentUser) {
+        setError('You must be logged in to make a booking');
+        return;
+      }
+
+      // Create the booking in Firestore
+      await addDoc(collection(db, 'bookings'), {
+        yachtId: yacht.id,
+        yachtName: yacht.name,
+        userId: currentUser.uid,
+        customerName: bookingData.name,
+        customerEmail: bookingData.email,
+        customerPhone: bookingData.phone,
+        startDate: bookingData.startDate,
+        endDate: bookingData.endDate,
+        totalPrice: bookingData.totalPrice,
+        status: 'pending',
+        createdAt: new Date().toISOString()
+      });
+
+      setSuccessMessage('Booking submitted successfully! Check your email for confirmation.');
+    } catch (error) {
+      console.error('Error submitting booking:', error);
+      setError('Failed to submit booking. Please try again.');
+    }
   };
 
   if (loading) {
@@ -66,6 +88,16 @@ const YachtDetails = () => {
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+      <Snackbar
+        open={!!successMessage}
+        autoHideDuration={6000}
+        onClose={() => setSuccessMessage('')}
+      >
+        <Alert severity="success" onClose={() => setSuccessMessage('')}>
+          {successMessage}
+        </Alert>
+      </Snackbar>
+
       <Grid container spacing={4}>
         <Grid item xs={12} md={8}>
           <Paper elevation={3} sx={{ p: 3 }}>
@@ -95,73 +127,33 @@ const YachtDetails = () => {
             </Typography>
             <Grid container spacing={2}>
               <Grid item xs={6}>
-                <Typography><strong>Length:</strong> {yacht.length}m</Typography>
+                <Typography><strong>Length:</strong> {yacht.length}ft</Typography>
                 <Typography><strong>Capacity:</strong> {yacht.capacity} guests</Typography>
-                <Typography><strong>Crew:</strong> {yacht.crew} members</Typography>
+                <Typography><strong>Location:</strong> {yacht.location}</Typography>
               </Grid>
               <Grid item xs={6}>
-                <Typography><strong>Cabins:</strong> {yacht.cabins}</Typography>
-                <Typography><strong>Speed:</strong> {yacht.speed} knots</Typography>
                 <Typography><strong>Price:</strong> ${yacht.pricePerDay}/day</Typography>
+                <Typography><strong>Features:</strong> {yacht.features}</Typography>
               </Grid>
             </Grid>
           </Paper>
         </Grid>
         <Grid item xs={12} md={4}>
-          <Paper elevation={3} sx={{ p: 3 }}>
-            <Typography variant="h5" gutterBottom>
-              Book This Yacht
-            </Typography>
-            <form onSubmit={handleBookingSubmit}>
-              <Stack spacing={3}>
-                <TextField
-                  label="Start Date"
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  InputLabelProps={{ shrink: true }}
-                  fullWidth
-                  required
-                />
-                <TextField
-                  label="End Date"
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  InputLabelProps={{ shrink: true }}
-                  fullWidth
-                  required
-                />
-                <TextField
-                  label="Full Name"
-                  value={bookingDetails.name}
-                  onChange={(e) => setBookingDetails({...bookingDetails, name: e.target.value})}
-                  required
-                />
-                <TextField
-                  label="Email"
-                  type="email"
-                  value={bookingDetails.email}
-                  onChange={(e) => setBookingDetails({...bookingDetails, email: e.target.value})}
-                  required
-                />
-                <TextField
-                  label="Phone"
-                  value={bookingDetails.phone}
-                  onChange={(e) => setBookingDetails({...bookingDetails, phone: e.target.value})}
-                  required
-                />
-                <Button 
-                  type="submit" 
-                  variant="contained" 
-                  color="primary"
-                  size="large"
-                >
-                  Submit Booking
-                </Button>
-              </Stack>
-            </form>
-          </Paper>
+          {currentUser ? (
+            <BookingCalendar 
+              yacht={yacht} 
+              onBookingSubmit={handleBookingSubmit} 
+            />
+          ) : (
+            <Paper elevation={3} sx={{ p: 3 }}>
+              <Typography variant="h6" gutterBottom>
+                Please log in to book this yacht
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                You need to be logged in to make a booking. Click here to log in or create an account.
+              </Typography>
+            </Paper>
+          )}
         </Grid>
       </Grid>
     </Container>

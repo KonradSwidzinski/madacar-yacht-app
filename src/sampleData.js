@@ -1,5 +1,6 @@
-import { collection, addDoc } from 'firebase/firestore';
+import { collection, addDoc, getDocs } from 'firebase/firestore';
 import { db } from './firebase';
+import { getAuth } from 'firebase/auth';
 
 const sampleYachts = [
   {
@@ -37,6 +38,34 @@ const sampleYachts = [
   }
 ];
 
+// Sample booking data for testing
+const sampleBookings = [
+  {
+    startDate: '2024-05-15T00:00:00.000Z',
+    endDate: '2024-05-20T00:00:00.000Z',
+    customerName: 'John Smith',
+    customerEmail: 'john.smith@example.com',
+    customerPhone: '+1234567890',
+    status: 'confirmed'
+  },
+  {
+    startDate: '2024-06-10T00:00:00.000Z',
+    endDate: '2024-06-15T00:00:00.000Z',
+    customerName: 'Alice Johnson',
+    customerEmail: 'alice.j@example.com',
+    customerPhone: '+0987654321',
+    status: 'pending'
+  },
+  {
+    startDate: '2024-07-01T00:00:00.000Z',
+    endDate: '2024-07-05T00:00:00.000Z',
+    customerName: 'Bob Wilson',
+    customerEmail: 'bob.wilson@example.com',
+    customerPhone: '+1122334455',
+    status: 'confirmed'
+  }
+];
+
 export const addSampleYachts = async () => {
   try {
     const yachtsCollection = collection(db, 'yachts');
@@ -47,4 +76,56 @@ export const addSampleYachts = async () => {
   } catch (error) {
     console.error('Error adding sample yachts:', error);
   }
+};
+
+export const addSampleBookings = async () => {
+  try {
+    const auth = getAuth();
+    const currentUser = auth.currentUser;
+
+    if (!currentUser) {
+      console.error('No authenticated user found. Please log in first.');
+      return;
+    }
+
+    // First get all yachts to distribute bookings among them
+    const yachtsSnapshot = await getDocs(collection(db, 'yachts'));
+    const yachts = yachtsSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+
+    if (yachts.length === 0) {
+      console.error('No yachts found. Please add yachts first.');
+      return;
+    }
+
+    // Add bookings for each yacht
+    for (const yacht of yachts) {
+      for (const booking of sampleBookings) {
+        const bookingData = {
+          ...booking,
+          yachtId: yacht.id,
+          yachtName: yacht.name,
+          userId: currentUser.uid,
+          totalPrice: calculatePrice(booking.startDate, booking.endDate, yacht.pricePerDay),
+          createdAt: new Date().toISOString()
+        };
+
+        await addDoc(collection(db, 'bookings'), bookingData);
+      }
+    }
+
+    console.log('Sample bookings added successfully!');
+  } catch (error) {
+    console.error('Error adding sample bookings:', error.message);
+    throw error; // Re-throw the error so it can be handled by the calling component
+  }
+};
+
+const calculatePrice = (startDate, endDate, pricePerDay) => {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  const days = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+  return days * pricePerDay;
 }; 

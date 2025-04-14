@@ -1,12 +1,12 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { 
-  createUserWithEmailAndPassword, 
-  signInWithEmailAndPassword, 
-  signOut, 
-  onAuthStateChanged 
-} from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../firebase';
+import { 
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut
+} from 'firebase/auth';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 const AuthContext = createContext();
 
@@ -16,47 +16,44 @@ export function useAuth() {
 
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  async function signup(email, password, isAdmin = false) {
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    
-    // Store user role in Firestore
-    await setDoc(doc(db, 'users', userCredential.user.uid), {
-      email,
-      role: isAdmin ? 'admin' : 'user',
-      createdAt: new Date().toISOString()
-    });
-
+  async function login(email, password) {
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const userDoc = await getDoc(doc(db, 'users', userCredential.user.uid));
+    if (userDoc.exists()) {
+      setIsAdmin(userDoc.data().role === 'admin');
+    }
     return userCredential;
   }
 
-  function login(email, password) {
-    return signInWithEmailAndPassword(auth, email, password);
+  async function signup(email, password) {
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    await setDoc(doc(db, 'users', userCredential.user.uid), {
+      email: email,
+      role: 'user',
+      createdAt: new Date().toISOString()
+    });
+    return userCredential;
   }
 
   function logout() {
+    setIsAdmin(false);
     return signOut(auth);
-  }
-
-  async function checkUserRole(uid) {
-    const userDoc = await getDoc(doc(db, 'users', uid));
-    if (userDoc.exists()) {
-      return userDoc.data().role === 'admin';
-    }
-    return false;
   }
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setCurrentUser(user);
       if (user) {
-        const adminStatus = await checkUserRole(user.uid);
-        setIsAdmin(adminStatus);
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        if (userDoc.exists()) {
+          setIsAdmin(userDoc.data().role === 'admin');
+        }
       } else {
         setIsAdmin(false);
       }
+      setCurrentUser(user);
       setLoading(false);
     });
 
@@ -66,8 +63,8 @@ export function AuthProvider({ children }) {
   const value = {
     currentUser,
     isAdmin,
-    signup,
     login,
+    signup,
     logout
   };
 

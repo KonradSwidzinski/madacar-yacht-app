@@ -1,74 +1,109 @@
 import React, { useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
-import {
-  Container,
-  Paper,
-  TextField,
-  Button,
-  Typography,
+import { 
+  Container, 
+  Paper, 
+  TextField, 
+  Button, 
+  Typography, 
   Box,
   Alert
 } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { doc, setDoc } from 'firebase/firestore';
+import { db } from '../firebase';
 
 const Login = () => {
+  const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
   const navigate = useNavigate();
+  const { login, signup, currentUser } = useAuth();
 
-  async function handleSubmit(e) {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-
+    setError('');
+    
     try {
-      setError('');
-      setLoading(true);
-      await login(email, password);
-      navigate('/');
+      if (isLogin) {
+        // Login
+        const { user } = await login(email, password);
+        // Navigate based on user role (handled by AuthContext)
+      } else {
+        // Sign up
+        const { user } = await signup(email, password);
+        // Create user document in Firestore
+        await setDoc(doc(db, 'users', user.uid), {
+          email: email,
+          role: 'user', // Default role for new users
+          createdAt: new Date().toISOString()
+        });
+        // After signup, automatically log them in (handled by AuthContext)
+      }
     } catch (error) {
-      setError('Failed to sign in: ' + error.message);
-    } finally {
-      setLoading(false);
+      console.error('Authentication error:', error);
+      setError(error.message);
     }
-  }
+  };
+
+  // If user is already logged in, redirect them
+  React.useEffect(() => {
+    if (currentUser) {
+      navigate('/');
+    }
+  }, [currentUser, navigate]);
 
   return (
-    <Container maxWidth="sm">
-      <Paper elevation={3} sx={{ p: 4, mt: 8 }}>
+    <Container maxWidth="sm" sx={{ mt: 8 }}>
+      <Paper elevation={3} sx={{ p: 4 }}>
         <Typography variant="h4" component="h1" gutterBottom align="center">
-          Login
+          {isLogin ? 'Login' : 'Sign Up'}
         </Typography>
-        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-        <Box component="form" onSubmit={handleSubmit}>
+        
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
+
+        <form onSubmit={handleSubmit}>
           <TextField
-            fullWidth
             label="Email"
             type="email"
+            fullWidth
+            margin="normal"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            margin="normal"
             required
           />
           <TextField
-            fullWidth
             label="Password"
             type="password"
+            fullWidth
+            margin="normal"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            margin="normal"
             required
           />
           <Button
-            fullWidth
             type="submit"
             variant="contained"
             color="primary"
-            disabled={loading}
+            fullWidth
+            size="large"
             sx={{ mt: 3 }}
           >
-            Login
+            {isLogin ? 'Login' : 'Sign Up'}
+          </Button>
+        </form>
+
+        <Box sx={{ mt: 2, textAlign: 'center' }}>
+          <Button
+            color="primary"
+            onClick={() => setIsLogin(!isLogin)}
+          >
+            {isLogin ? "Don't have an account? Sign Up" : "Already have an account? Login"}
           </Button>
         </Box>
       </Paper>

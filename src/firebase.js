@@ -8,7 +8,7 @@ const firebaseConfig = {
     apiKey: "AIzaSyBKayeVHYYqsjbTKtg_0K0f41VLzIBnvdY",
     authDomain: "madacar-yacht-charter.firebaseapp.com",
     projectId: "madacar-yacht-charter",
-    storageBucket: "madacar-yacht-charter.firebasestorage.app",
+    storageBucket: "madacar-yacht-charter.appspot.com",
     messagingSenderId: "1040480934653",
     appId: "1:1040480934653:web:cdc622cfe29b6fd8923c94",
     measurementId: "G-83X7VYRPV2"
@@ -16,5 +16,7 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
+
+// Initialize Firestore and Auth
 export const db = getFirestore(app);
 export const auth = getAuth(app); 
