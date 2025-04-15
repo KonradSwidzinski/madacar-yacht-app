@@ -7,7 +7,8 @@ import {
   Box, 
   Paper,
   Alert,
-  Snackbar
+  Snackbar,
+  Button
 } from '@mui/material';
 import { doc, getDoc, addDoc, collection } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -29,10 +30,11 @@ const YachtDetails = () => {
         const yachtDoc = await getDoc(doc(db, 'yachts', id));
         if (yachtDoc.exists()) {
           setYacht({ id: yachtDoc.id, ...yachtDoc.data() });
+        } else {
+          setError('Nie znaleziono jachtu');
         }
       } catch (error) {
-        console.error('Error fetching yacht:', error);
-        setError('Failed to load yacht details');
+        setError('Błąd podczas ładowania danych jachtu');
       } finally {
         setLoading(false);
       }
@@ -44,11 +46,10 @@ const YachtDetails = () => {
   const handleBookingSubmit = async (bookingData) => {
     try {
       if (!currentUser) {
-        setError('You must be logged in to make a booking');
+        setError('Musisz być zalogowany, aby dokonać rezerwacji');
         return;
       }
 
-      // Create the booking in Firestore
       await addDoc(collection(db, 'bookings'), {
         yachtId: yacht.id,
         yachtName: yacht.name,
@@ -63,28 +64,14 @@ const YachtDetails = () => {
         createdAt: new Date().toISOString()
       });
 
-      setSuccessMessage('Booking submitted successfully! Check your email for confirmation.');
+      setSuccessMessage('Rezerwacja została złożona pomyślnie! Sprawdź swoją skrzynkę email.');
     } catch (error) {
-      console.error('Error submitting booking:', error);
-      setError('Failed to submit booking. Please try again.');
+      setError('Nie udało się złożyć rezerwacji. Spróbuj ponownie.');
     }
   };
 
-  if (loading) {
-    return (
-      <Container>
-        <Typography>Loading...</Typography>
-      </Container>
-    );
-  }
-
-  if (!yacht) {
-    return (
-      <Container>
-        <Typography>Yacht not found</Typography>
-      </Container>
-    );
-  }
+  if (loading) return <Container><Typography>Ładowanie...</Typography></Container>;
+  if (!yacht) return <Container><Typography>Nie znaleziono jachtu</Typography></Container>;
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
@@ -97,6 +84,18 @@ const YachtDetails = () => {
           {successMessage}
         </Alert>
       </Snackbar>
+
+      {error && (
+        <Snackbar
+          open={!!error}
+          autoHideDuration={6000}
+          onClose={() => setError('')}
+        >
+          <Alert severity="error" onClose={() => setError('')}>
+            {error}
+          </Alert>
+        </Snackbar>
+      )}
 
       <Grid container spacing={4}>
         <Grid item xs={12} md={8}>
@@ -117,23 +116,23 @@ const YachtDetails = () => {
               alt={yacht.name}
             />
             <Typography variant="h6" gutterBottom>
-              Description
+              Opis
             </Typography>
             <Typography paragraph>
               {yacht.description}
             </Typography>
             <Typography variant="h6" gutterBottom>
-              Specifications
+              Specyfikacja
             </Typography>
             <Grid container spacing={2}>
               <Grid item xs={6}>
-                <Typography><strong>Length:</strong> {yacht.length}ft</Typography>
-                <Typography><strong>Capacity:</strong> {yacht.capacity} guests</Typography>
-                <Typography><strong>Location:</strong> {yacht.location}</Typography>
+                <Typography><strong>Długość:</strong> {yacht.length} m</Typography>
+                <Typography><strong>Pojemność:</strong> {yacht.capacity} osób</Typography>
+                <Typography><strong>Lokalizacja:</strong> {yacht.location}</Typography>
               </Grid>
               <Grid item xs={6}>
-                <Typography><strong>Price:</strong> ${yacht.pricePerDay}/day</Typography>
-                <Typography><strong>Features:</strong> {yacht.features}</Typography>
+                <Typography><strong>Cena:</strong> {yacht.pricePerDay} zł/dzień</Typography>
+                <Typography><strong>Wyposażenie:</strong> {yacht.features}</Typography>
               </Grid>
             </Grid>
           </Paper>
@@ -147,11 +146,19 @@ const YachtDetails = () => {
           ) : (
             <Paper elevation={3} sx={{ p: 3 }}>
               <Typography variant="h6" gutterBottom>
-                Please log in to book this yacht
+                Zaloguj się, aby zarezerwować jacht
               </Typography>
-              <Typography variant="body2" color="text.secondary">
-                You need to be logged in to make a booking. Click here to log in or create an account.
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                Musisz być zalogowany, aby dokonać rezerwacji.
               </Typography>
+              <Button 
+                variant="contained" 
+                color="primary" 
+                onClick={() => navigate('/login')}
+                fullWidth
+              >
+                Zaloguj się
+              </Button>
             </Paper>
           )}
         </Grid>

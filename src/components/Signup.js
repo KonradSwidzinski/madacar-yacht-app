@@ -24,7 +24,7 @@ const Signup = () => {
     e.preventDefault();
 
     if (password !== passwordConfirm) {
-      return setError('Passwords do not match');
+      return setError('Hasła nie są identyczne');
     }
 
     try {
@@ -33,7 +33,7 @@ const Signup = () => {
       await signup(email, password);
       navigate('/');
     } catch (error) {
-      setError('Failed to create an account: ' + error.message);
+      setError('Nie udało się utworzyć konta: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -43,7 +43,7 @@ const Signup = () => {
     <Container maxWidth="sm">
       <Paper elevation={3} sx={{ p: 4, mt: 8 }}>
         <Typography variant="h4" component="h1" gutterBottom align="center">
-          Sign Up
+          Rejestracja
         </Typography>
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
         <Box component="form" onSubmit={handleSubmit}>
@@ -58,7 +58,7 @@ const Signup = () => {
           />
           <TextField
             fullWidth
-            label="Password"
+            label="Hasło"
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -67,7 +67,7 @@ const Signup = () => {
           />
           <TextField
             fullWidth
-            label="Confirm Password"
+            label="Potwierdź hasło"
             type="password"
             value={passwordConfirm}
             onChange={(e) => setPasswordConfirm(e.target.value)}
@@ -82,7 +82,7 @@ const Signup = () => {
             disabled={loading}
             sx={{ mt: 3 }}
           >
-            Sign Up
+            Zarejestruj się
           </Button>
         </Box>
       </Paper>

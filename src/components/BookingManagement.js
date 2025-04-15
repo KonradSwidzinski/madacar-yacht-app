@@ -28,6 +28,14 @@ const statusColors = {
   rejected: 'error'
 };
 
+const statusLabels = {
+  pending: 'Oczekująca',
+  confirmed: 'Potwierdzona',
+  cancelled: 'Anulowana',
+  completed: 'Zakończona',
+  rejected: 'Odrzucona'
+};
+
 const BookingManagement = () => {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -80,16 +88,16 @@ const BookingManagement = () => {
   };
 
   if (loading) {
-    return <Typography>Loading bookings...</Typography>;
+    return <Typography>Ładowanie rezerwacji...</Typography>;
   }
 
   return (
     <Box sx={{ width: '100%', mb: 4 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Typography variant="h5" component="h2">
-          Booking Management
+          Zarządzanie Rezerwacjami
         </Typography>
-        <Tooltip title="Refresh bookings">
+        <Tooltip title="Odśwież rezerwacje">
           <IconButton onClick={fetchBookings}>
             <RefreshIcon />
           </IconButton>
@@ -100,12 +108,12 @@ const BookingManagement = () => {
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>Yacht</TableCell>
-              <TableCell>Customer</TableCell>
-              <TableCell>Dates</TableCell>
-              <TableCell>Total Price</TableCell>
+              <TableCell>Jacht</TableCell>
+              <TableCell>Klient</TableCell>
+              <TableCell>Terminy</TableCell>
+              <TableCell>Całkowita Cena</TableCell>
               <TableCell>Status</TableCell>
-              <TableCell>Contact</TableCell>
+              <TableCell>Kontakt</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -114,10 +122,10 @@ const BookingManagement = () => {
                 <TableCell>{booking.yachtName}</TableCell>
                 <TableCell>{booking.customerName}</TableCell>
                 <TableCell>
-                  {format(new Date(booking.startDate), 'MMM d, yyyy')} -<br />
-                  {format(new Date(booking.endDate), 'MMM d, yyyy')}
+                  {format(new Date(booking.startDate), 'dd.MM.yyyy')} -<br />
+                  {format(new Date(booking.endDate), 'dd.MM.yyyy')}
                 </TableCell>
-                <TableCell>${booking.totalPrice}</TableCell>
+                <TableCell>{booking.totalPrice} zł</TableCell>
                 <TableCell>
                   <Select
                     value={booking.status || 'pending'}
@@ -126,17 +134,17 @@ const BookingManagement = () => {
                     sx={{ minWidth: 120 }}
                     renderValue={(status) => (
                       <Chip 
-                        label={status.charAt(0).toUpperCase() + status.slice(1)} 
+                        label={statusLabels[status]} 
                         size="small" 
                         color={statusColors[status]}
                       />
                     )}
                   >
-                    <MenuItem value="pending">Pending</MenuItem>
-                    <MenuItem value="confirmed">Confirmed</MenuItem>
-                    <MenuItem value="cancelled">Cancelled</MenuItem>
-                    <MenuItem value="completed">Completed</MenuItem>
-                    <MenuItem value="rejected">Rejected</MenuItem>
+                    <MenuItem value="pending">Oczekująca</MenuItem>
+                    <MenuItem value="confirmed">Potwierdzona</MenuItem>
+                    <MenuItem value="cancelled">Anulowana</MenuItem>
+                    <MenuItem value="completed">Zakończona</MenuItem>
+                    <MenuItem value="rejected">Odrzucona</MenuItem>
                   </Select>
                 </TableCell>
                 <TableCell>

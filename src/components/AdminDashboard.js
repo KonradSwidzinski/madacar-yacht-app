@@ -49,7 +49,6 @@ const AdminDashboard = () => {
   const { logout, isAdmin, currentUser } = useAuth();
 
   useEffect(() => {
-    // Redirect if not admin
     if (!currentUser) {
       navigate('/login');
       return;
@@ -72,7 +71,7 @@ const AdminDashboard = () => {
       setYachts(yachtsData);
     } catch (error) {
       console.error('Error fetching yachts:', error);
-      setError('Failed to fetch yachts: ' + error.message);
+      setError('Błąd podczas pobierania jachtów: ' + error.message);
     }
   };
 
@@ -81,19 +80,19 @@ const AdminDashboard = () => {
       await logout();
       navigate('/login');
     } catch (error) {
-      console.error('Error signing out:', error);
-      setError('Failed to log out: ' + error.message);
+      console.error('Failed to log out:', error);
+      setError('Błąd podczas wylogowywania: ' + error.message);
     }
   };
 
   const handleDeleteYacht = async (yachtId) => {
-    if (window.confirm('Are you sure you want to delete this yacht?')) {
+    if (window.confirm('Czy na pewno chcesz usunąć ten jacht?')) {
       try {
         await deleteDoc(doc(db, 'yachts', yachtId));
-        await fetchYachts(); // Refresh the list
+        await fetchYachts();
       } catch (error) {
         console.error('Error deleting yacht:', error);
-        setError('Failed to delete yacht: ' + error.message);
+        setError('Błąd podczas usuwania jachtu: ' + error.message);
       }
     }
   };
@@ -177,7 +176,7 @@ const AdminDashboard = () => {
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <Box sx={{ mb: 4 }}>
         <Typography variant="h4" component="h1" gutterBottom>
-          Admin Dashboard
+          Panel Administratora
         </Typography>
         <Button 
           variant="outlined" 
@@ -185,7 +184,7 @@ const AdminDashboard = () => {
           onClick={handleLogout}
           sx={{ mt: 2 }}
         >
-          Logout
+          Wyloguj
         </Button>
       </Box>
 
@@ -197,8 +196,8 @@ const AdminDashboard = () => {
 
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
         <Tabs value={activeTab} onChange={handleTabChange}>
-          <Tab label="Yachts Management" />
-          <Tab label="Bookings Management" />
+          <Tab label="Zarządzanie Jachtami" />
+          <Tab label="Zarządzanie Rezerwacjami" />
         </Tabs>
       </Box>
 
@@ -206,14 +205,14 @@ const AdminDashboard = () => {
         <Paper sx={{ p: 3, mb: 4 }}>
           <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <Typography variant="h5" component="h2">
-              Yachts
+              Jachty
             </Typography>
             <Button 
               variant="contained" 
               color="primary" 
               onClick={() => handleOpen()}
             >
-              Add New Yacht
+              Dodaj Nowy Jacht
             </Button>
           </Box>
 
@@ -221,18 +220,18 @@ const AdminDashboard = () => {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>Name</TableCell>
-                  <TableCell>Price/Day</TableCell>
-                  <TableCell>Capacity</TableCell>
-                  <TableCell>Actions</TableCell>
+                  <TableCell>Nazwa</TableCell>
+                  <TableCell>Cena/Dzień</TableCell>
+                  <TableCell>Pojemność</TableCell>
+                  <TableCell>Akcje</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {yachts.map((yacht) => (
                   <TableRow key={yacht.id}>
                     <TableCell>{yacht.name}</TableCell>
-                    <TableCell>${yacht.pricePerDay}</TableCell>
-                    <TableCell>{yacht.capacity} guests</TableCell>
+                    <TableCell>{yacht.pricePerDay} zł</TableCell>
+                    <TableCell>{yacht.capacity} osób</TableCell>
                     <TableCell>
                       <IconButton
                         onClick={() => handleOpen(yacht)}
@@ -261,105 +260,103 @@ const AdminDashboard = () => {
 
       <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
         <DialogTitle>
-          {editingYacht ? 'Edit Yacht' : 'Add New Yacht'}
+          {editingYacht ? 'Edytuj Jacht' : 'Dodaj Nowy Jacht'}
         </DialogTitle>
         <DialogContent>
           <Box component="form" noValidate sx={{ mt: 2 }}>
             <Grid container spacing={2}>
               <Grid item xs={12}>
                 <TextField
-                  required
-                  fullWidth
-                  label="Name"
                   name="name"
+                  label="Nazwa"
+                  fullWidth
                   value={formData.name}
                   onChange={handleInputChange}
+                  required
                 />
               </Grid>
               <Grid item xs={12}>
                 <TextField
-                  required
+                  name="description"
+                  label="Opis"
                   fullWidth
                   multiline
                   rows={4}
-                  label="Description"
-                  name="description"
                   value={formData.description}
                   onChange={handleInputChange}
+                  required
                 />
               </Grid>
               <Grid item xs={12}>
                 <TextField
-                  required
-                  fullWidth
-                  label="Image URL"
                   name="imageUrl"
+                  label="URL Zdjęcia"
+                  fullWidth
                   value={formData.imageUrl}
                   onChange={handleInputChange}
+                  required
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
                 <TextField
-                  required
-                  fullWidth
-                  type="number"
-                  label="Price per Day"
                   name="pricePerDay"
+                  label="Cena za Dzień"
+                  type="number"
+                  fullWidth
                   value={formData.pricePerDay}
                   onChange={handleInputChange}
+                  required
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
                 <TextField
-                  required
-                  fullWidth
-                  type="number"
-                  label="Capacity"
                   name="capacity"
+                  label="Pojemność"
+                  type="number"
+                  fullWidth
                   value={formData.capacity}
                   onChange={handleInputChange}
+                  required
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
                 <TextField
-                  required
-                  fullWidth
-                  type="number"
-                  label="Length (ft)"
                   name="length"
+                  label="Długość (m)"
+                  type="number"
+                  fullWidth
                   value={formData.length}
                   onChange={handleInputChange}
+                  required
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid item xs={12}>
                 <TextField
-                  required
-                  fullWidth
-                  label="Location"
                   name="location"
+                  label="Lokalizacja"
+                  fullWidth
                   value={formData.location}
                   onChange={handleInputChange}
                 />
               </Grid>
               <Grid item xs={12}>
                 <TextField
+                  name="features"
+                  label="Wyposażenie"
                   fullWidth
                   multiline
-                  rows={2}
-                  label="Features (comma-separated)"
-                  name="features"
+                  rows={3}
                   value={formData.features}
                   onChange={handleInputChange}
-                  helperText="Enter features separated by commas"
                 />
               </Grid>
             </Grid>
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleClose}>Cancel</Button>
-          <Button onClick={handleSubmit} variant="contained">
-            {editingYacht ? 'Save Changes' : 'Add Yacht'}
+          <Button onClick={handleClose}>Anuluj</Button>
+          <Button onClick={handleSubmit} variant="contained" color="primary">
+            {editingYacht ? 'Zapisz Zmiany' : 'Dodaj Jacht'}
           </Button>
         </DialogActions>
       </Dialog>

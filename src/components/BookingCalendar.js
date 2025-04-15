@@ -27,7 +27,6 @@ const BookingCalendar = ({ yacht, onBookingSubmit }) => {
   const [error, setError] = useState('');
   const [totalPrice, setTotalPrice] = useState(0);
 
-  // Fetch existing bookings for this yacht
   useEffect(() => {
     const fetchBookings = async () => {
       try {
@@ -35,19 +34,16 @@ const BookingCalendar = ({ yacht, onBookingSubmit }) => {
         const q = query(
           bookingsRef, 
           where('yachtId', '==', yacht.id),
-          where('status', 'in', ['confirmed', 'pending']) // Only check active bookings
+          where('status', 'in', ['confirmed', 'pending'])
         );
-        const querySnapshot = await getDocs(q);
-        const bookings = querySnapshot.docs.map(doc => ({
+        const bookings = (await getDocs(q)).docs.map(doc => ({
           id: doc.id,
           startDate: parseISO(doc.data().startDate),
           endDate: parseISO(doc.data().endDate)
         }));
-        console.log('Fetched bookings:', bookings); // Debug log
         setExistingBookings(bookings);
       } catch (error) {
-        console.error('Error fetching bookings:', error);
-        setError('Error checking availability. Please try again.');
+        setError('Błąd podczas sprawdzania dostępności. Spróbuj ponownie.');
       }
     };
 
@@ -56,62 +52,43 @@ const BookingCalendar = ({ yacht, onBookingSubmit }) => {
     }
   }, [yacht?.id]);
 
-  // Calculate total price when dates change
   useEffect(() => {
     if (startDate && endDate) {
-      const days = differenceInDays(endDate, startDate);
-      setTotalPrice(days * yacht.pricePerDay);
+      setTotalPrice(differenceInDays(endDate, startDate) * yacht.pricePerDay);
     } else {
       setTotalPrice(0);
     }
   }, [startDate, endDate, yacht.pricePerDay]);
 
   const isDateDisabled = (date) => {
-    // Prevent booking past dates
-    if (isBefore(date, startOfToday())) {
-      return true;
-    }
-
-    // Only allow dates from May to November
+    if (isBefore(date, startOfToday())) return true;
+    
     const month = date.getMonth();
-    if (month < 4 || month > 10) { // 4 = May, 10 = November
-      return true;
-    }
+    if (month < 4 || month > 10) return true;
 
-    // Check if date is within any existing booking
-    return existingBookings.some(booking => {
-      const isBooked = isWithinInterval(date, { 
+    return existingBookings.some(booking => 
+      isWithinInterval(date, { 
         start: booking.startDate, 
         end: booking.endDate 
-      });
-      if (isBooked) {
-        console.log('Date is booked:', date, 'by booking:', booking);
-      }
-      return isBooked;
-    });
+      })
+    );
   };
 
   const validateDateRange = (start, end) => {
     if (!start || !end) return false;
     
-    // Minimum 3 days
     const days = differenceInDays(end, start);
     if (days < 3) {
-      setError('Minimum booking duration is 3 days');
+      setError('Minimalny okres rezerwacji to 3 dni');
       return false;
     }
 
-    // Check if the range overlaps with existing bookings
-    const hasOverlap = existingBookings.some(booking => {
-      const overlaps = (start <= booking.endDate && end >= booking.startDate);
-      if (overlaps) {
-        console.log('Date range overlaps with booking:', booking); // Debug log
-      }
-      return overlaps;
-    });
+    const hasOverlap = existingBookings.some(booking => 
+      start <= booking.endDate && end >= booking.startDate
+    );
     
     if (hasOverlap) {
-      setError('Selected dates overlap with existing bookings');
+      setError('Wybrane daty pokrywają się z istniejącą rezerwacją');
       return false;
     }
 
@@ -133,95 +110,80 @@ const BookingCalendar = ({ yacht, onBookingSubmit }) => {
     }
   };
 
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setBookingDetails(prev => ({ ...prev, [name]: value }));
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!validateDateRange(startDate, endDate)) {
-      return;
+    if (validateDateRange(startDate, endDate)) {
+      onBookingSubmit({
+        ...bookingDetails,
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        totalPrice
+      });
     }
-
-    onBookingSubmit({
-      startDate: startDate.toISOString(),
-      endDate: endDate.toISOString(),
-      totalPrice,
-      ...bookingDetails
-    });
   };
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <Paper elevation={3} sx={{ p: 3 }}>
         <Typography variant="h5" gutterBottom>
-          Book This Yacht
+          Rezerwacja
         </Typography>
-        
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
-
+        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
         <form onSubmit={handleSubmit}>
           <Stack spacing={3}>
             <DatePicker
-              label="Start Date"
+              label="Data rozpoczęcia"
               value={startDate}
               onChange={handleStartDateChange}
               shouldDisableDate={isDateDisabled}
-              minDate={new Date()}
-              slotProps={{
-                textField: {
-                  required: true,
-                  fullWidth: true
-                }
-              }}
+              minDate={startOfToday()}
+              slotProps={{ textField: { fullWidth: true } }}
             />
             <DatePicker
-              label="End Date"
+              label="Data zakończenia"
               value={endDate}
               onChange={handleEndDateChange}
               shouldDisableDate={isDateDisabled}
-              minDate={startDate ? addDays(startDate, 3) : new Date()}
-              slotProps={{
-                textField: {
-                  required: true,
-                  fullWidth: true
-                }
-              }}
+              minDate={startDate ? addDays(startDate, 3) : startOfToday()}
+              slotProps={{ textField: { fullWidth: true } }}
             />
             <TextField
-              label="Full Name"
+              label="Imię i nazwisko"
+              name="name"
               value={bookingDetails.name}
-              onChange={(e) => setBookingDetails({...bookingDetails, name: e.target.value})}
+              onChange={handleInputChange}
               required
-              fullWidth
             />
             <TextField
               label="Email"
+              name="email"
               type="email"
               value={bookingDetails.email}
-              onChange={(e) => setBookingDetails({...bookingDetails, email: e.target.value})}
+              onChange={handleInputChange}
               required
-              fullWidth
             />
             <TextField
-              label="Phone"
+              label="Telefon"
+              name="phone"
               value={bookingDetails.phone}
-              onChange={(e) => setBookingDetails({...bookingDetails, phone: e.target.value})}
+              onChange={handleInputChange}
               required
-              fullWidth
             />
-            
             {totalPrice > 0 && (
               <Box sx={{ my: 2 }}>
                 <Typography variant="h6">
-                  Total Price: ${totalPrice}
+                  Całkowita cena: {totalPrice} zł
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  {differenceInDays(endDate, startDate)} days at ${yacht.pricePerDay}/day
+                  {differenceInDays(endDate, startDate)} dni po {yacht.pricePerDay} zł/dzień
                 </Typography>
               </Box>
             )}
-
             <Button 
               type="submit" 
               variant="contained" 
@@ -229,7 +191,7 @@ const BookingCalendar = ({ yacht, onBookingSubmit }) => {
               size="large"
               disabled={!!error || !startDate || !endDate}
             >
-              Submit Booking
+              Zatwierdź rezerwację
             </Button>
           </Stack>
         </form>

@@ -33,7 +33,7 @@ const Navbar = () => {
             sx={{ flexGrow: 1, cursor: 'pointer' }}
             onClick={() => navigate('/')}
           >
-            Yacht Charter
+            Czarter Jachtów
           </Typography>
           
           <Box sx={{ display: 'flex', gap: 2 }}>
@@ -44,7 +44,7 @@ const Navbar = () => {
                     color="inherit"
                     onClick={() => navigate('/my-bookings')}
                   >
-                    My Bookings
+                    Moje Rezerwacje
                   </Button>
                 )}
                 {isAdmin && (
@@ -52,14 +52,14 @@ const Navbar = () => {
                     color="inherit"
                     onClick={() => navigate('/admin')}
                   >
-                    Admin
+                    Panel Admina
                   </Button>
                 )}
                 <Button 
                   color="inherit"
                   onClick={handleLogout}
                 >
-                  Logout
+                  Wyloguj
                 </Button>
               </>
             ) : (
@@ -68,13 +68,13 @@ const Navbar = () => {
                   color="inherit"
                   onClick={() => navigate('/login')}
                 >
-                  Login
+                  Zaloguj
                 </Button>
                 <Button 
                   color="inherit"
                   onClick={() => navigate('/signup')}
                 >
-                  Sign Up
+                  Zarejestruj się
                 </Button>
               </>
             )}

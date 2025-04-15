@@ -58,7 +58,7 @@ const Login = () => {
     <Container maxWidth="sm" sx={{ mt: 8 }}>
       <Paper elevation={3} sx={{ p: 4 }}>
         <Typography variant="h4" component="h1" gutterBottom align="center">
-          {isLogin ? 'Login' : 'Sign Up'}
+          {isLogin ? 'Logowanie' : 'Rejestracja'}
         </Typography>
         
         {error && (
@@ -78,7 +78,7 @@ const Login = () => {
             required
           />
           <TextField
-            label="Password"
+            label="Hasło"
             type="password"
             fullWidth
             margin="normal"
@@ -94,7 +94,7 @@ const Login = () => {
             size="large"
             sx={{ mt: 3 }}
           >
-            {isLogin ? 'Login' : 'Sign Up'}
+            {isLogin ? 'Zaloguj' : 'Zarejestruj się'}
           </Button>
         </form>
 
@@ -103,7 +103,7 @@ const Login = () => {
             color="primary"
             onClick={() => setIsLogin(!isLogin)}
           >
-            {isLogin ? "Don't have an account? Sign Up" : "Already have an account? Login"}
+            {isLogin ? "Nie masz konta? Zarejestruj się" : "Masz już konto? Zaloguj się"}
           </Button>
         </Box>
       </Paper>

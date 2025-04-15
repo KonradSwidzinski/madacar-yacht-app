@@ -46,14 +46,13 @@ const UserBookings = () => {
         ...doc.data()
       }));
       
-      // Sort bookings by date, most recent first
       bookingsData.sort((a, b) => new Date(b.startDate) - new Date(a.startDate));
       
       setBookings(bookingsData);
       setError('');
     } catch (error) {
       console.error('Error fetching bookings:', error);
-      setError('Failed to load bookings. Please try again.');
+      setError('Błąd podczas ładowania rezerwacji. Spróbuj ponownie.');
     } finally {
       setLoading(false);
     }
@@ -66,7 +65,7 @@ const UserBookings = () => {
   }, [currentUser]);
 
   const handleCancelBooking = async (bookingId) => {
-    if (!window.confirm('Are you sure you want to cancel this booking?')) {
+    if (!window.confirm('Czy na pewno chcesz anulować tę rezerwację?')) {
       return;
     }
 
@@ -77,7 +76,6 @@ const UserBookings = () => {
         lastUpdated: new Date().toISOString()
       });
       
-      // Update local state
       setBookings(prevBookings =>
         prevBookings.map(booking =>
           booking.id === bookingId
@@ -88,18 +86,29 @@ const UserBookings = () => {
       setError('');
     } catch (error) {
       console.error('Error cancelling booking:', error);
-      setError('Failed to cancel booking. Please try again.');
+      setError('Błąd podczas anulowania rezerwacji. Spróbuj ponownie.');
     }
   };
 
+  const getStatusLabel = (status) => {
+    const statusMap = {
+      pending: 'Oczekująca',
+      confirmed: 'Potwierdzona',
+      cancelled: 'Anulowana',
+      completed: 'Zakończona',
+      rejected: 'Odrzucona'
+    };
+    return statusMap[status] || status;
+  };
+
   if (loading) {
-    return <Typography>Loading your bookings...</Typography>;
+    return <Typography>Ładowanie rezerwacji...</Typography>;
   }
 
   return (
     <Box sx={{ width: '100%', mb: 4 }}>
       <Typography variant="h5" component="h2" gutterBottom>
-        My Bookings
+        Moje Rezerwacje
       </Typography>
 
       {error && (
@@ -110,18 +119,18 @@ const UserBookings = () => {
 
       {bookings.length === 0 ? (
         <Paper sx={{ p: 3 }}>
-          <Typography>You don't have any bookings yet.</Typography>
+          <Typography>Nie masz jeszcze żadnych rezerwacji.</Typography>
         </Paper>
       ) : (
         <TableContainer component={Paper}>
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell>Yacht</TableCell>
-                <TableCell>Dates</TableCell>
-                <TableCell>Total Price</TableCell>
+                <TableCell>Jacht</TableCell>
+                <TableCell>Terminy</TableCell>
+                <TableCell>Całkowita Cena</TableCell>
                 <TableCell>Status</TableCell>
-                <TableCell>Actions</TableCell>
+                <TableCell>Akcje</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -129,13 +138,13 @@ const UserBookings = () => {
                 <TableRow key={booking.id}>
                   <TableCell>{booking.yachtName}</TableCell>
                   <TableCell>
-                    {format(new Date(booking.startDate), 'MMM d, yyyy')} -<br />
-                    {format(new Date(booking.endDate), 'MMM d, yyyy')}
+                    {format(new Date(booking.startDate), 'dd.MM.yyyy')} -<br />
+                    {format(new Date(booking.endDate), 'dd.MM.yyyy')}
                   </TableCell>
-                  <TableCell>${booking.totalPrice}</TableCell>
+                  <TableCell>{booking.totalPrice} zł</TableCell>
                   <TableCell>
                     <Chip 
-                      label={booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                      label={getStatusLabel(booking.status)}
                       size="small"
                       color={statusColors[booking.status]}
                     />
@@ -148,7 +157,7 @@ const UserBookings = () => {
                         size="small"
                         onClick={() => handleCancelBooking(booking.id)}
                       >
-                        Cancel Booking
+                        Anuluj Rezerwację
                       </Button>
                     )}
                   </TableCell>
